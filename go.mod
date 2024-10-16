@@ -1,3 +1,3 @@
-module github.com/roxxxiey/SyslogWriter
+module SyslogWriter
 
 go 1.23
