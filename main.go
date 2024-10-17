@@ -1,7 +1,6 @@
 package syslogwriter
 
 import (
-	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -14,13 +13,7 @@ type SyslogWriter struct {
 }
 
 // NewSyslogWriter - создает новый экземпляр SyslogWriter
-func NewSyslogWriter(address string) (*SyslogWriter, error) {
-
-	// Открываем файл для записи логов
-	logFile, err := os.OpenFile("./log.txt", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
-	if err != nil {
-		return nil, fmt.Errorf("error opening file: %v", err)
-	}
+func NewSyslogWriter(address string, logFile *os.File) (*SyslogWriter, error) {
 
 	// Разрешаем адрес UDP сервера
 	addr, err := net.ResolveUDPAddr("udp", address)
