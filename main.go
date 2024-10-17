@@ -1,7 +1,7 @@
 package syslogwriter
 
 import (
-	"log"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -19,7 +19,7 @@ func NewSyslogWriter(address string) (*SyslogWriter, error) {
 	// Открываем файл для записи логов
 	logFile, err := os.OpenFile("./log.txt", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0777)
 	if err != nil {
-		log.Fatalln("can't open log file:", err)
+		return nil, fmt.Errorf("error opening file: %v", err)
 	}
 
 	// Разрешаем адрес UDP сервера
