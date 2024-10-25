@@ -13,10 +13,10 @@ type SyslogWriter struct {
 }
 
 // NewSyslogWriter - создает новый экземпляр SyslogWriter
-func NewSyslogWriter(logFile *os.File) (*SyslogWriter, error) {
+func NewSyslogWriter(address string, logFile *os.File) (*SyslogWriter, error) {
 
 	// Разрешаем адрес UDP сервера
-	addr, err := net.ResolveUDPAddr("udp", "localhost:514")
+	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		return nil, err
 	}
