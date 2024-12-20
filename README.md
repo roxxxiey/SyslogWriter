@@ -1,1 +1,1 @@
-Это syslog writer для формата RFC5424.
+# Это syslog writer для формата RFC5424.
