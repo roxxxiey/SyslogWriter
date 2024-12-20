@@ -1,6 +1,7 @@
 package syslogwriter
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"path/filepath"
@@ -34,39 +35,39 @@ func NewSyslogWriter(address string, logFile *os.File) (*SyslogWriter, error) {
 }
 
 func (s *SyslogWriter) Emergency(input string) {
-	s.Write("<8>", input)
+	s.Write(8, input)
 }
 
 func (s *SyslogWriter) Alert(input string) {
-	s.Write("<9>", input)
+	s.Write(9, input)
 }
 
 func (s *SyslogWriter) Critical(input string) {
-	s.Write("<10>", input)
+	s.Write(10, input)
 }
 
 func (s *SyslogWriter) Error(input string) {
-	s.Write("<11>", input)
+	s.Write(11, input)
 }
 
 func (s *SyslogWriter) Warning(input string) {
-	s.Write("<12>", input)
+	s.Write(12, input)
 }
 
 func (s *SyslogWriter) Notice(input string) {
-	s.Write("<13>", input)
+	s.Write(13, input)
 }
 
 func (s *SyslogWriter) Info(input string) {
-	s.Write("<14>", input)
+	s.Write(14, input)
 }
 
 func (s *SyslogWriter) Debug(input string) {
-	s.Write("<15>", input)
+	s.Write(15, input)
 }
 
 // Write - пишет лог в файл и отправляет его на сервер
-func (s *SyslogWriter) Write(er, input string) error {
+func (s *SyslogWriter) Write(priority int, input string) error {
 
 	host, err := os.Hostname()
 	if err != nil {
@@ -77,14 +78,13 @@ func (s *SyslogWriter) Write(er, input string) error {
 		executable = "unknown"
 	}
 	processName := filepath.Base(executable)
+	procID := os.Getpid()
 
-	message := er + Time() + " " + host + " " + processName + ": " + input
-	if !strings.HasSuffix(message, "\n") {
-		message += "\n"
-	}
+	// Формируем сообщение в формате RFC 5424
+	message := formatRFC5424(priority, host, processName, procID, input)
 
 	// Записываем лог в файл
-	_, err = s.LogFilePath.WriteString(message)
+	_, err = s.LogFilePath.WriteString(message + "\n")
 	if err != nil {
 		return err
 	}
@@ -103,6 +103,16 @@ func (s *SyslogWriter) Close() error {
 	return s.conn.Close()
 }
 
-func Time() string {
-	return time.Now().Format("Jan 02 15:04:05")
+func formatRFC5424(priority int, hostname, appName string, procID int, message string) string {
+	timestamp := time.Now().Format(time.RFC3339) // ISO 8601 формат
+	version := 1
+	msgID := "ID1"        // Пример идентификатора сообщения
+	structuredData := "-" // Структурированные данные отсутствуют
+
+	return strings.TrimSpace(
+		fmt.Sprintf(
+			"<%d>%d %s %s %s %d %s [%s] %s",
+			priority, version, timestamp, hostname, appName, procID, msgID, structuredData, message,
+		),
+	)
 }
