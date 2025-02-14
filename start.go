@@ -95,6 +95,9 @@ func (s *SyslogWriter) Write(priority int, input string) error {
 		return err
 	}
 
+	// Выводим лог в консоль
+	fmt.Println(message)
+
 	return nil
 }
 
