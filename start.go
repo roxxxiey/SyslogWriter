@@ -13,25 +13,26 @@ import (
 type SyslogWriter struct {
 	conn        *net.UDPConn
 	LogFilePath *os.File
+	AppName     string // <<< новое поле
 }
 
 // NewSyslogWriter - создает новый экземпляр SyslogWriter
-func NewSyslogWriter(address string, logFile *os.File) (*SyslogWriter, error) {
-
-	// Разрешаем адрес UDP сервера
+func NewSyslogWriter(address string, logFile *os.File, appName string) (*SyslogWriter, error) {
 	addr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
 		return nil, err
 	}
 
-	// Устанавливаем соединение с UDP сервером
 	conn, err := net.DialUDP("udp", nil, addr)
 	if err != nil {
 		return nil, err
 	}
 
-	// Возвращаем экземпляр SyslogWriter
-	return &SyslogWriter{conn: conn, LogFilePath: logFile}, nil
+	return &SyslogWriter{
+		conn:        conn,
+		LogFilePath: logFile,
+		AppName:     appName,
+	}, nil
 }
 
 func (s *SyslogWriter) Emergency(input string) {
@@ -68,36 +69,37 @@ func (s *SyslogWriter) Debug(input string) {
 
 // Write - пишет лог в файл и отправляет его на сервер
 func (s *SyslogWriter) Write(priority int, input string) error {
-
 	host, err := os.Hostname()
 	if err != nil {
 		host = "unknown"
 	}
-	executable, err := os.Executable()
-	if err != nil {
-		executable = "unknown"
-	}
-	processName := filepath.Base(executable)
 	procID := os.Getpid()
 
-	// Формируем сообщение в формате RFC 5424
-	message := formatRFC5424(priority, host, processName, procID, input)
+	appName := s.AppName
+	if appName == "" {
+		// fallback если AppName не задан
+		executable, err := os.Executable()
+		if err != nil {
+			executable = "unknown"
+		}
+		appName = filepath.Base(executable)
+	}
 
-	// Записываем лог в файл
+	// Формируем сообщение в формате RFC 5424
+	message := formatRFC5424(priority, host, appName, procID, input)
+
+	// Запись и отправка сообщения
 	_, err = s.LogFilePath.WriteString(message + "\n")
 	if err != nil {
 		return err
 	}
 
-	// Отправляем лог на сервер
 	_, err = s.conn.Write([]byte(message))
 	if err != nil {
 		return err
 	}
 
-	// Выводим лог в консоль
 	fmt.Println(message)
-
 	return nil
 }
 
